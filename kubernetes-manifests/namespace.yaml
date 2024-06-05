@@ -1,0 +1,5 @@
+# kubernetes-manifests/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: movie-scraper

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scraped Results</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .poster {
+            width: 100px;
+            margin-right: 10px;
+        }
+        .movie-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .movie-details {
+            flex-grow: 1;
+        }
+        .sort-buttons {
+            margin-bottom: 15px;
+        }
+        .sorted-asc::after {
+            content: " \25B2"; /* Up arrow */
+        }
+        .sorted-desc::after {
+            content: " \25BC"; /* Down arrow */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4 mb-4">Scraped Results</h1>
+
+        <!-- Filters -->
+        <div class="form-group">
+            <label>Filter by Genre:</label>
+            <div>
+                {% for genre in genres %}
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input genre-filter" type="checkbox" value="{{ genre.name }}" id="genre-{{ genre.name }}">
+                    <label class="form-check-label" for="genre-{{ genre.name }}">{{ genre.name }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Filter by Year:</label>
+            <div>
+                {% for year in years %}
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input year-filter" type="checkbox" value="{{ year }}" id="year-{{ year }}">
+                    <label class="form-check-label" for="year-{{ year }}">{{ year }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Sort buttons -->
+        <div class="sort-buttons">
+            <button class="btn btn-link sort-button" data-sort="title">Sort by Title</button>
+            <button class="btn btn-link sort-button" data-sort="year">Sort by Year</button>
+            <button class="btn btn-link sort-button" data-sort="rating">Sort by Rating</button>
+        </div>
+
+        <!-- Results -->
+        <div id="results-container">
+            {% for movie in results %}
+            <div class="movie-row" data-title="{{ movie.title }}" data-year="{{ movie.year }}" data-rating="{{ movie.rating }}" data-genres="{{ movie.genres | join(',') }}">
+                <img src="{{ movie.poster_url }}" alt="Poster" class="poster">
+                <div class="movie-details">
+                    <h5>{{ movie.title }}</h5>
+                    <p><strong>Year:</strong> {{ movie.year }}</p>
+                    <p><strong>Rating:</strong> {{ movie.rating }}</p>
+                    <p><strong>Description:</strong> {{ movie.description }}</p>
+                    <p><strong>Genres:</strong> {{ movie.genres | join(', ') }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="/" class="btn btn-secondary">Go Back</a>
+    </div>
+
+    <script>
+        let currentSort = {
+            criteria: '',
+            ascending: true
+        };
+
+        document.querySelectorAll('.sort-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const criteria = button.getAttribute('data-sort');
+                if (currentSort.criteria === criteria) {
+                    currentSort.ascending = !currentSort.ascending;
+                } else {
+                    currentSort.criteria = criteria;
+                    currentSort.ascending = true;
+                }
+                sortResults(criteria, currentSort.ascending);
+                updateSortButtons(criteria, currentSort.ascending);
+            });
+        });
+
+        document.querySelectorAll('.genre-filter, .year-filter').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                filterResults();
+            });
+        });
+
+        function sortResults(criteria, ascending) {
+            const container = document.getElementById('results-container');
+            const movies = Array.from(container.getElementsByClassName('movie-row'));
+            const sortedMovies = movies.sort((a, b) => {
+                const aValue = a.getAttribute('data-' + criteria);
+                const bValue = b.getAttribute('data-' + criteria);
+                if (criteria === 'title') {
+                    return ascending ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                } else {
+                    return ascending ? parseFloat(aValue) - parseFloat(bValue) : parseFloat(bValue) - parseFloat(aValue);
+                }
+            });
+            sortedMovies.forEach(movie => container.appendChild(movie));
+        }
+
+        function updateSortButtons(criteria, ascending) {
+            document.querySelectorAll('.sort-button').forEach(button => {
+                button.classList.remove('sorted-asc', 'sorted-desc');
+                if (button.getAttribute('data-sort') === criteria) {
+                    button.classList.add(ascending ? 'sorted-asc' : 'sorted-desc');
+                }
+            });
+        }
+
+        function filterResults() {
+            const genreFilters = Array.from(document.querySelectorAll('.genre-filter:checked')).map(cb => cb.value);
+            const yearFilters = Array.from(document.querySelectorAll('.year-filter:checked')).map(cb => cb.value);
+            const movies = Array.from(document.getElementsByClassName('movie-row'));
+            
+            movies.forEach(movie => {
+                const movieGenres = movie.getAttribute('data-genres').split(',');
+                const movieYear = movie.getAttribute('data-year');
+                
+                const matchesGenres = genreFilters.length === 0 || genreFilters.some(genre => movieGenres.includes(genre));
+                const matchesYears = yearFilters.length === 0 || yearFilters.includes(movieYear);
+                
+                if (matchesGenres && matchesYears) {
+                    movie.style.display = '';
+                } else {
+                    movie.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

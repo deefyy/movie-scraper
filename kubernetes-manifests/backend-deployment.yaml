@@ -1,0 +1,47 @@
+# kubernetes-manifests/backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prir-backend
+  namespace: movie-scraper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prir-backend
+  template:
+    metadata:
+      labels:
+        app: prir-backend
+    spec:
+      containers:
+      - name: backend
+        image: deefyy/backend:latest
+        ports:
+        - containerPort: 5001
+        env:
+        - name: DB_URI
+          value: "mongodb://mongodb-service:27017/"
+        - name: DB_USERNAME
+          value: "root"
+        - name: DB_PASSWORD
+          value: "root"
+        - name: DB_NAME
+          value: "movie_database"
+        - name: BACKEND_HOST
+          value: "0.0.0.0"
+        - name: BACKEND_PORT
+          value: "5001"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prir-backend
+  namespace: movie-scraper
+spec:
+  ports:
+  - port: 5001
+    targetPort: 5001
+  selector:
+    app: prir-backend

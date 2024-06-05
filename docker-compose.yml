@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:4.4
+    container_name: prir-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  backend:
+    image: deefyy/backend:latest
+    container_name: prir-backend
+    environment:
+      DB_URI: mongodb://prir-mongo:27017/
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      DB_NAME: movie_database
+      BACKEND_HOST: 0.0.0.0
+      BACKEND_PORT: 5001
+    depends_on:
+      - mongo
+    ports:
+      - "5001:5001"
+
+  ui:
+    image: deefyy/ui:latest
+    container_name: prir-ui
+    environment:
+      DB_URI: mongodb://prir-mongo:27017/
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      DB_NAME: movie_database
+      BACKEND_HOST: prir-backend
+      BACKEND_PORT: 5001
+      UI_HOST: 0.0.0.0
+      UI_PORT: 5000
+    depends_on:
+      - backend
+    ports:
+      - "5000:5000"
+
+volumes:
+  mongo-data:
